@@ -8,6 +8,7 @@ Outputs each message and tracks the message count.
 import sys
 import time
 import os
+import argparse
 from solace.messaging.messaging_service import MessagingService
 from solace.messaging.resources.topic_subscription import TopicSubscription
 from solace.messaging.receiver.message_receiver import MessageHandler, InboundMessage
@@ -32,7 +33,15 @@ class MessageCounter(MessageHandler):
         
         # Get message payload
         payload_str = message.get_payload_as_string()
-        payload = payload_str if payload_str else message.get_payload_as_bytes()
+        if payload_str:
+            payload = payload_str
+        else:
+            # If not a string, get bytes and decode or represent them
+            payload_bytes = message.get_payload_as_bytes()
+            try:
+                payload = payload_bytes.decode('utf-8') if payload_bytes else "[empty]"
+            except (UnicodeDecodeError, AttributeError):
+                payload = repr(payload_bytes)
         
         # Get topic
         topic = message.get_destination_name()
@@ -49,12 +58,50 @@ class MessageCounter(MessageHandler):
 def main():
     """Main function to set up and run the Solace message consumer."""
     
-    # Configuration - read from environment variables with fallback defaults
-    SOLACE_HOST = os.getenv("SOLACE_HOST", "tcp://localhost:55555")
-    SOLACE_VPN = os.getenv("SOLACE_VPN", "default")
-    SOLACE_USERNAME = os.getenv("SOLACE_USERNAME", "default")
-    SOLACE_PASSWORD = os.getenv("SOLACE_PASSWORD", "default")
-    TOPIC_SUBSCRIPTION = os.getenv("SOLACE_TOPIC", "solace/samples/>")
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Solace Message Consumer - Consume messages from a Solace topic',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        '--host',
+        type=str,
+        default=os.getenv("SOLACE_HOST", "tcp://localhost:55555"),
+        help='Solace broker host and port'
+    )
+    parser.add_argument(
+        '--vpn',
+        type=str,
+        default=os.getenv("SOLACE_VPN", "default"),
+        help='Solace message VPN name'
+    )
+    parser.add_argument(
+        '--username',
+        type=str,
+        default=os.getenv("SOLACE_USERNAME", "default"),
+        help='Authentication username'
+    )
+    parser.add_argument(
+        '--password',
+        type=str,
+        default=os.getenv("SOLACE_PASSWORD", "default"),
+        help='Authentication password'
+    )
+    parser.add_argument(
+        '--topic',
+        type=str,
+        default=os.getenv("SOLACE_TOPIC", "solace/samples/>"),
+        help='Topic subscription pattern'
+    )
+    
+    args = parser.parse_args()
+    
+    # Configuration from command-line arguments
+    SOLACE_HOST = args.host
+    SOLACE_VPN = args.vpn
+    SOLACE_USERNAME = args.username
+    SOLACE_PASSWORD = args.password
+    TOPIC_SUBSCRIPTION = args.topic
     
     print("Solace Message Consumer")
     print("=" * 60)
@@ -72,6 +119,11 @@ def main():
         service_properties.AUTHENTICATION_BASIC_PASSWORD: SOLACE_PASSWORD
     }
     
+    # Track resources for cleanup
+    direct_receiver = None
+    messaging_service = None
+    message_handler = MessageCounter()
+    
     try:
         # Create messaging service
         messaging_service = MessagingService.builder().from_properties(broker_props).build()
@@ -86,9 +138,6 @@ def main():
         direct_receiver = messaging_service.create_direct_message_receiver_builder().build()
         direct_receiver.start()
         print("✓ Receiver started!")
-        
-        # Create message handler
-        message_handler = MessageCounter()
         
         # Subscribe to topic
         print(f"\nSubscribing to topic: {TOPIC_SUBSCRIPTION}")
@@ -110,8 +159,18 @@ def main():
         
         # Cleanup
         print("\nCleaning up...")
-        direct_receiver.terminate()
-        messaging_service.disconnect()
+        if direct_receiver:
+            try:
+                direct_receiver.terminate()
+            except Exception as e:
+                print(f"Warning: Error terminating receiver: {e}")
+        
+        if messaging_service:
+            try:
+                messaging_service.disconnect()
+            except Exception as e:
+                print(f"Warning: Error disconnecting: {e}")
+        
         print(f"✓ Total messages received: {message_handler.message_count}")
         print("✓ Disconnected successfully!")
         
