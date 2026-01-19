@@ -20,8 +20,10 @@ from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientErro
 class MessageCounter(MessageHandler):
     """Message handler that counts and displays messages."""
     
-    def __init__(self):
+    def __init__(self, receiver=None, is_persistent=False):
         self.message_count = 0
+        self.receiver = receiver
+        self.is_persistent = is_persistent
     
     def on_message(self, message: InboundMessage):
         """
@@ -54,6 +56,13 @@ class MessageCounter(MessageHandler):
         print(f"Payload: {payload}")
         print(f"{'='*60}")
         print(f"Total messages received: {self.message_count}")
+        
+        # Acknowledge the message if in persistent mode (queue)
+        if self.is_persistent and self.receiver:
+            try:
+                self.receiver.ack(message)
+            except Exception as e:
+                print(f"Warning: Failed to acknowledge message: {e}")
 
 
 def main():
@@ -114,6 +123,12 @@ def main():
         default=os.getenv("SOLACE_QUEUE_TYPE", "exclusive"),
         help='Queue type: "exclusive" (only one consumer) or "non-exclusive" (multiple consumers for load balancing)'
     )
+    parser.add_argument(
+        '--ack',
+        action='store_true',
+        default=os.getenv("SOLACE_ACK", "").lower() in ['true', '1', 'yes'],
+        help='Enable message acknowledgment for queue mode (removes messages from queue after processing)'
+    )
     
     args = parser.parse_args()
     
@@ -126,6 +141,7 @@ def main():
     SUBSCRIPTION_MODE = args.mode
     QUEUE_NAME = args.queue
     QUEUE_TYPE = args.queue_type
+    ACK_ENABLED = args.ack
     
     # Validate queue mode
     if SUBSCRIPTION_MODE == 'queue' and not QUEUE_NAME:
@@ -141,6 +157,7 @@ def main():
         print(f"Topic: {TOPIC_SUBSCRIPTION}")
     else:
         print(f"Queue: {QUEUE_NAME} ({QUEUE_TYPE})")
+        print(f"Acknowledgment: {'enabled' if ACK_ENABLED else 'disabled'}")
     print("=" * 60)
     
     # Build broker properties
@@ -154,7 +171,7 @@ def main():
     # Track resources for cleanup
     receiver = None
     messaging_service = None
-    message_handler = MessageCounter()
+    message_handler = None
     
     try:
         # Create messaging service
@@ -173,6 +190,9 @@ def main():
             receiver.start()
             print("✓ Receiver started!")
             
+            # Create message handler (no acknowledgment needed for direct messages)
+            message_handler = MessageCounter(receiver=None, is_persistent=False)
+            
             # Subscribe to topic
             print(f"\nSubscribing to topic: {TOPIC_SUBSCRIPTION}")
             topic_sub = TopicSubscription.of(TOPIC_SUBSCRIPTION)
@@ -190,6 +210,9 @@ def main():
             receiver = messaging_service.create_persistent_message_receiver_builder().build(queue)
             receiver.start()
             print("✓ Receiver started!")
+            
+            # Create message handler with receiver for acknowledgment
+            message_handler = MessageCounter(receiver=receiver, is_persistent=ACK_ENABLED)
             
             # Set up message handler
             receiver.receive_async(message_handler)
