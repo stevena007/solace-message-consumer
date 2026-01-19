@@ -181,19 +181,18 @@ def main():
             print("✓ Subscribed successfully!")
         else:
             # Create a persistent message receiver for queue subscriptions
-            print("\nSetting up persistent message receiver for queue subscription...")
-            receiver = messaging_service.create_persistent_message_receiver_builder().build()
-            receiver.start()
-            print("✓ Receiver started!")
-            
-            # Bind to queue
-            print(f"\nBinding to queue: {QUEUE_NAME} ({QUEUE_TYPE})")
+            print(f"\nSetting up persistent message receiver for queue subscription...")
+            print(f"Binding to queue: {QUEUE_NAME} ({QUEUE_TYPE})")
             if QUEUE_TYPE == 'exclusive':
                 queue = Queue.durable_exclusive_queue(QUEUE_NAME)
             else:
                 queue = Queue.durable_non_exclusive_queue(QUEUE_NAME)
+            receiver = messaging_service.create_persistent_message_receiver_builder().build(queue)
+            receiver.start()
+            print("✓ Receiver started!")
+            
+            # Set up message handler
             receiver.receive_async(message_handler)
-            receiver.add_subscription(queue)
             print("✓ Bound to queue successfully!")
         
         print("\n" + "=" * 60)
