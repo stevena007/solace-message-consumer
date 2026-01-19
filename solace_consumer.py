@@ -90,7 +90,7 @@ class MessageCounter(MessageHandler):
             
             # Redelivered flag
             redelivered = message.is_redelivered()
-            if redelivered:
+            if redelivered is not None:
                 print(f"Redelivered: {redelivered}")
             
             # User properties
@@ -191,15 +191,15 @@ def main():
     )
     parser.add_argument(
         '--show-message',
-        action='store_true',
+        action=argparse.BooleanOptionalAction,
         default=os.getenv("SOLACE_SHOW_MESSAGE", "true").lower() in ['true', '1', 'yes'],
-        help='Display message payload (default: enabled)'
+        help='Display message payload (default: enabled, use --no-show-message to disable)'
     )
     parser.add_argument(
         '--show-headers',
-        action='store_true',
+        action=argparse.BooleanOptionalAction,
         default=os.getenv("SOLACE_SHOW_HEADERS", "").lower() in ['true', '1', 'yes'],
-        help='Display message headers (default: disabled)'
+        help='Display message headers (default: disabled, use --show-headers to enable)'
     )
     
     args = parser.parse_args()

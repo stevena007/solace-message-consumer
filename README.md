@@ -68,7 +68,10 @@ python solace_consumer.py --show-headers --topic "your/topic/>"
 
 **Hide Message Payload, Show Headers Only:**
 ```bash
-# Using environment variable to disable message payload
+# Using command-line flag
+python solace_consumer.py --no-show-message --show-headers --topic "your/topic/>"
+
+# Or using environment variable
 export SOLACE_SHOW_MESSAGE=false
 python solace_consumer.py --show-headers --topic "your/topic/>"
 ```
@@ -88,8 +91,8 @@ Available parameters:
 - `--queue`: Queue name (required when mode is `queue`)
 - `--queue-type`: Queue type - `exclusive` or `non-exclusive` (default: `exclusive`)
 - `--ack`: Enable message acknowledgment for queue mode (removes messages from queue after processing)
-- `--show-message`: Display message payload (default: enabled)
-- `--show-headers`: Display message headers including correlation ID, timestamp, priority, etc. (default: disabled)
+- `--show-message` / `--no-show-message`: Display message payload (default: enabled)
+- `--show-headers` / `--no-show-headers`: Display message headers including correlation ID, timestamp, priority, etc. (default: disabled)
 
 To see all available options:
 ```bash
