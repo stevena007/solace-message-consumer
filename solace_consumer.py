@@ -107,6 +107,13 @@ def main():
         default=os.getenv("SOLACE_QUEUE", ""),
         help='Queue name (required when mode is "queue")'
     )
+    parser.add_argument(
+        '--queue-type',
+        type=str,
+        choices=['exclusive', 'non-exclusive'],
+        default=os.getenv("SOLACE_QUEUE_TYPE", "exclusive"),
+        help='Queue type: "exclusive" (only one consumer) or "non-exclusive" (multiple consumers for load balancing)'
+    )
     
     args = parser.parse_args()
     
@@ -118,6 +125,7 @@ def main():
     TOPIC_SUBSCRIPTION = args.topic
     SUBSCRIPTION_MODE = args.mode
     QUEUE_NAME = args.queue
+    QUEUE_TYPE = args.queue_type
     
     # Validate queue mode
     if SUBSCRIPTION_MODE == 'queue' and not QUEUE_NAME:
@@ -132,7 +140,7 @@ def main():
     if SUBSCRIPTION_MODE == 'topic':
         print(f"Topic: {TOPIC_SUBSCRIPTION}")
     else:
-        print(f"Queue: {QUEUE_NAME}")
+        print(f"Queue: {QUEUE_NAME} ({QUEUE_TYPE})")
     print("=" * 60)
     
     # Build broker properties
@@ -179,8 +187,11 @@ def main():
             print("✓ Receiver started!")
             
             # Bind to queue
-            print(f"\nBinding to queue: {QUEUE_NAME}")
-            queue = Queue.durable_exclusive_queue(QUEUE_NAME)
+            print(f"\nBinding to queue: {QUEUE_NAME} ({QUEUE_TYPE})")
+            if QUEUE_TYPE == 'exclusive':
+                queue = Queue.durable_exclusive_queue(QUEUE_NAME)
+            else:
+                queue = Queue.durable_non_exclusive_queue(QUEUE_NAME)
             receiver.receive_async(message_handler)
             receiver.add_subscription(queue)
             print("✓ Bound to queue successfully!")

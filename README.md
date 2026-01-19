@@ -51,6 +51,11 @@ python solace_consumer.py --host tcp://your-broker:55555 --vpn your-vpn --userna
 python solace_consumer.py --mode queue --queue your-queue-name --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
 ```
 
+**Queue Subscription (Non-Exclusive for Load Balancing):**
+```bash
+python solace_consumer.py --mode queue --queue your-queue-name --queue-type non-exclusive --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
+```
+
 Available parameters:
 - `--host`: Broker host and port (default: `tcp://localhost:55555`)
 - `--vpn`: Message VPN name (default: `default`)
@@ -59,6 +64,7 @@ Available parameters:
 - `--mode`: Subscription mode - `topic` or `queue` (default: `topic`)
 - `--topic`: Topic subscription pattern (default: `solace/samples/>`, used when mode is `topic`)
 - `--queue`: Queue name (required when mode is `queue`)
+- `--queue-type`: Queue type - `exclusive` or `non-exclusive` (default: `exclusive`)
 
 To see all available options:
 ```bash
@@ -76,6 +82,7 @@ You can also configure the consumer using environment variables (command-line ar
 - `SOLACE_MODE`: Subscription mode (`topic` or `queue`)
 - `SOLACE_TOPIC`: Topic subscription pattern
 - `SOLACE_QUEUE`: Queue name
+- `SOLACE_QUEUE_TYPE`: Queue type (`exclusive` or `non-exclusive`)
 
 **Example (Topic):**
 ```bash
@@ -87,7 +94,7 @@ export SOLACE_TOPIC="your/topic/>"
 python solace_consumer.py
 ```
 
-**Example (Queue):**
+**Example (Queue with Non-Exclusive Type):**
 ```bash
 export SOLACE_HOST="tcp://your-broker:55555"
 export SOLACE_VPN="your-vpn"
@@ -95,6 +102,7 @@ export SOLACE_USERNAME="your-username"
 export SOLACE_PASSWORD="your-password"
 export SOLACE_MODE="queue"
 export SOLACE_QUEUE="your-queue-name"
+export SOLACE_QUEUE_TYPE="non-exclusive"
 python solace_consumer.py
 ```
 
@@ -170,7 +178,7 @@ Connecting to: tcp://localhost:55555
 VPN: default
 Username: *******
 Mode: queue
-Queue: myQueue
+Queue: myQueue (exclusive)
 ============================================================
 
 Connecting to Solace broker...
@@ -179,7 +187,7 @@ Connecting to Solace broker...
 Setting up persistent message receiver for queue subscription...
 ✓ Receiver started!
 
-Binding to queue: myQueue
+Binding to queue: myQueue (exclusive)
 ✓ Bound to queue successfully!
 
 ============================================================
