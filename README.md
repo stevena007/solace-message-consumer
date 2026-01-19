@@ -1,12 +1,12 @@
 # Solace Message Consumer
 
-A Python program that consumes messages from a Solace topic, displays the messages, and tracks the message count.
+A Python program that consumes messages from Solace topics and queues, displays the messages, and tracks the message count.
 
 ## Features
 
 - Connects to Solace PubSub+ broker
-- Subscribes to configurable topics
-- Displays received messages with topic information
+- Subscribes to configurable topics or queues
+- Displays received messages with topic/queue information
 - Tracks and displays message count
 - Clean shutdown with summary statistics
 
@@ -41,8 +41,19 @@ python solace_consumer.py
 
 Configure the consumer using command-line parameters:
 
+**Topic Subscription (Default):**
 ```bash
 python solace_consumer.py --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password --topic "your/topic/>"
+```
+
+**Queue Subscription:**
+```bash
+python solace_consumer.py --mode queue --queue your-queue-name --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
+```
+
+**Queue Subscription (Non-Exclusive for Load Balancing):**
+```bash
+python solace_consumer.py --mode queue --queue your-queue-name --queue-type non-exclusive --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
 ```
 
 Available parameters:
@@ -50,7 +61,10 @@ Available parameters:
 - `--vpn`: Message VPN name (default: `default`)
 - `--username`: Authentication username (default: `default`)
 - `--password`: Authentication password (default: `default`)
-- `--topic`: Topic subscription pattern (default: `solace/samples/>`)
+- `--mode`: Subscription mode - `topic` or `queue` (default: `topic`)
+- `--topic`: Topic subscription pattern (default: `solace/samples/>`, used when mode is `topic`)
+- `--queue`: Queue name (required when mode is `queue`)
+- `--queue-type`: Queue type - `exclusive` or `non-exclusive` (default: `exclusive`)
 
 To see all available options:
 ```bash
@@ -65,15 +79,30 @@ You can also configure the consumer using environment variables (command-line ar
 - `SOLACE_VPN`: Message VPN name
 - `SOLACE_USERNAME`: Authentication username
 - `SOLACE_PASSWORD`: Authentication password
+- `SOLACE_MODE`: Subscription mode (`topic` or `queue`)
 - `SOLACE_TOPIC`: Topic subscription pattern
+- `SOLACE_QUEUE`: Queue name
+- `SOLACE_QUEUE_TYPE`: Queue type (`exclusive` or `non-exclusive`)
 
-Example:
+**Example (Topic):**
 ```bash
 export SOLACE_HOST="tcp://your-broker:55555"
 export SOLACE_VPN="your-vpn"
 export SOLACE_USERNAME="your-username"
 export SOLACE_PASSWORD="your-password"
 export SOLACE_TOPIC="your/topic/>"
+python solace_consumer.py
+```
+
+**Example (Queue with Non-Exclusive Type):**
+```bash
+export SOLACE_HOST="tcp://your-broker:55555"
+export SOLACE_VPN="your-vpn"
+export SOLACE_USERNAME="your-username"
+export SOLACE_PASSWORD="your-password"
+export SOLACE_MODE="queue"
+export SOLACE_QUEUE="your-queue-name"
+export SOLACE_QUEUE_TYPE="non-exclusive"
 python solace_consumer.py
 ```
 
@@ -107,20 +136,22 @@ Press `Ctrl+C` to gracefully stop the consumer. It will display the total messag
 
 ## Example
 
+**Topic Subscription Example:**
 ```bash
 $ python solace_consumer.py
 Solace Message Consumer
 ============================================================
 Connecting to: tcp://localhost:55555
 VPN: default
-Username: default
+Username: *******
+Mode: topic
 Topic: solace/samples/>
 ============================================================
 
 Connecting to Solace broker...
 ✓ Connected successfully!
 
-Setting up message receiver...
+Setting up direct message receiver for topic subscription...
 ✓ Receiver started!
 
 Subscribing to topic: solace/samples/>
@@ -134,6 +165,39 @@ Waiting for messages... (Press Ctrl+C to exit)
 Message #1
 Topic: solace/samples/test
 Payload: Hello from Solace!
+============================================================
+Total messages received: 1
+```
+
+**Queue Subscription Example:**
+```bash
+$ python solace_consumer.py --mode queue --queue myQueue
+Solace Message Consumer
+============================================================
+Connecting to: tcp://localhost:55555
+VPN: default
+Username: *******
+Mode: queue
+Queue: myQueue (exclusive)
+============================================================
+
+Connecting to Solace broker...
+✓ Connected successfully!
+
+Setting up persistent message receiver for queue subscription...
+✓ Receiver started!
+
+Binding to queue: myQueue (exclusive)
+✓ Bound to queue successfully!
+
+============================================================
+Waiting for messages... (Press Ctrl+C to exit)
+============================================================
+
+============================================================
+Message #1
+Topic: solace/samples/test
+Payload: Hello from Queue!
 ============================================================
 Total messages received: 1
 ```
