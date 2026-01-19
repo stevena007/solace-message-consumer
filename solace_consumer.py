@@ -70,7 +70,7 @@ class MessageCounter(MessageHandler):
             
             # Timestamp
             timestamp = message.get_sender_timestamp()
-            if timestamp:
+            if timestamp is not None:
                 print(f"Sender Timestamp: {timestamp}")
             
             # Priority
@@ -80,7 +80,7 @@ class MessageCounter(MessageHandler):
             
             # Expiration
             expiration = message.get_expiration()
-            if expiration:
+            if expiration is not None:
                 print(f"Expiration: {expiration}")
             
             # Sequence number

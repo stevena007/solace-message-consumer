@@ -66,11 +66,12 @@ python solace_consumer.py --mode queue --queue your-queue-name --queue-type non-
 python solace_consumer.py --show-headers --topic "your/topic/>"
 ```
 
-**Hide Message Payload (Headers Only):**
+**Hide Message Payload, Show Headers Only:**
 ```bash
+# Using environment variable to disable message payload
+export SOLACE_SHOW_MESSAGE=false
 python solace_consumer.py --show-headers --topic "your/topic/>"
 ```
-(Note: To hide the message payload, omit the `--show-message` flag or set `SOLACE_SHOW_MESSAGE=false` environment variable)
 
 **Display Both Message and Headers:**
 ```bash
