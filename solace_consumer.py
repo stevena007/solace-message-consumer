@@ -183,24 +183,48 @@ def main():
         default=os.getenv("SOLACE_QUEUE_TYPE", "exclusive"),
         help='Queue type: "exclusive" (only one consumer) or "non-exclusive" (multiple consumers for load balancing)'
     )
-    parser.add_argument(
+    ack_group = parser.add_mutually_exclusive_group()
+    ack_group.add_argument(
         '--ack',
-        action=argparse.BooleanOptionalAction,
-        default=os.getenv("SOLACE_ACK", "").lower() in ['true', '1', 'yes'],
-        help='Enable message acknowledgment for queue mode (removes messages from queue after processing, use --no-ack to disable)'
+        dest='ack',
+        action='store_true',
+        help='Enable message acknowledgment for queue mode (removes messages from queue after processing)'
     )
-    parser.add_argument(
+    ack_group.add_argument(
+        '--no-ack',
+        dest='ack',
+        action='store_false',
+        help='Disable message acknowledgment for queue mode'
+    )
+    parser.set_defaults(ack=os.getenv("SOLACE_ACK", "").lower() in ['true', '1', 'yes'])
+    show_message_group = parser.add_mutually_exclusive_group()
+    show_message_group.add_argument(
         '--show-message',
-        action=argparse.BooleanOptionalAction,
-        default=os.getenv("SOLACE_SHOW_MESSAGE", "true").lower() in ['true', '1', 'yes'],
-        help='Display message payload (default: enabled, use --no-show-message to disable)'
+        dest='show_message',
+        action='store_true',
+        help='Display message payload'
     )
-    parser.add_argument(
+    show_message_group.add_argument(
+        '--no-show-message',
+        dest='show_message',
+        action='store_false',
+        help='Hide message payload'
+    )
+    parser.set_defaults(show_message=os.getenv("SOLACE_SHOW_MESSAGE", "true").lower() in ['true', '1', 'yes'])
+    show_headers_group = parser.add_mutually_exclusive_group()
+    show_headers_group.add_argument(
         '--show-headers',
-        action=argparse.BooleanOptionalAction,
-        default=os.getenv("SOLACE_SHOW_HEADERS", "").lower() in ['true', '1', 'yes'],
-        help='Display message headers (default: disabled, use --show-headers to enable)'
+        dest='show_headers',
+        action='store_true',
+        help='Display message headers including correlation ID, timestamp, priority, etc.'
     )
+    show_headers_group.add_argument(
+        '--no-show-headers',
+        dest='show_headers',
+        action='store_false',
+        help='Hide message headers'
+    )
+    parser.set_defaults(show_headers=os.getenv("SOLACE_SHOW_HEADERS", "").lower() in ['true', '1', 'yes'])
     
     args = parser.parse_args()
     
