@@ -61,6 +61,22 @@ python solace_consumer.py --mode queue --queue your-queue-name --ack --host tcp:
 python solace_consumer.py --mode queue --queue your-queue-name --queue-type non-exclusive --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
 ```
 
+**Display Message Headers:**
+```bash
+python solace_consumer.py --show-headers --topic "your/topic/>"
+```
+
+**Hide Message Payload (Headers Only):**
+```bash
+python solace_consumer.py --show-headers --topic "your/topic/>"
+```
+(Note: To hide the message payload, omit the `--show-message` flag or set `SOLACE_SHOW_MESSAGE=false` environment variable)
+
+**Display Both Message and Headers:**
+```bash
+python solace_consumer.py --show-message --show-headers --topic "your/topic/>"
+```
+
 Available parameters:
 - `--host`: Broker host and port (default: `tcp://localhost:55555`)
 - `--vpn`: Message VPN name (default: `default`)
@@ -71,6 +87,8 @@ Available parameters:
 - `--queue`: Queue name (required when mode is `queue`)
 - `--queue-type`: Queue type - `exclusive` or `non-exclusive` (default: `exclusive`)
 - `--ack`: Enable message acknowledgment for queue mode (removes messages from queue after processing)
+- `--show-message`: Display message payload (default: enabled)
+- `--show-headers`: Display message headers including correlation ID, timestamp, priority, etc. (default: disabled)
 
 To see all available options:
 ```bash
@@ -90,6 +108,8 @@ You can also configure the consumer using environment variables (command-line ar
 - `SOLACE_QUEUE`: Queue name
 - `SOLACE_QUEUE_TYPE`: Queue type (`exclusive` or `non-exclusive`)
 - `SOLACE_ACK`: Enable message acknowledgment (`true`, `1`, or `yes` to enable)
+- `SOLACE_SHOW_MESSAGE`: Display message payload (`true`, `1`, or `yes` to enable, enabled by default)
+- `SOLACE_SHOW_HEADERS`: Display message headers (`true`, `1`, or `yes` to enable)
 
 **Example (Topic):**
 ```bash
@@ -151,11 +171,42 @@ python solace_consumer.py --mode queue --queue myQueue --ack
 
 The consumer displays messages in the following format:
 
+**Default (message payload only):**
 ```
 ============================================================
 Message #1
 Topic: solace/samples/test
 Payload: Hello, Solace!
+============================================================
+Total messages received: 1
+```
+
+**With headers enabled (`--show-headers`):**
+```
+============================================================
+Message #1
+Topic: solace/samples/test
+
+--- Message Headers ---
+Correlation ID: abc123
+Sender Timestamp: 1234567890
+Priority: 4
+User Properties: {'key1': 'value1', 'key2': 'value2'}
+Payload: Hello, Solace!
+============================================================
+Total messages received: 1
+```
+
+**Headers only (with `SOLACE_SHOW_MESSAGE=false` environment variable):**
+```
+============================================================
+Message #1
+Topic: solace/samples/test
+
+--- Message Headers ---
+Correlation ID: abc123
+Sender Timestamp: 1234567890
+Priority: 4
 ============================================================
 Total messages received: 1
 ```
