@@ -51,6 +51,11 @@ python solace_consumer.py --host tcp://your-broker:55555 --vpn your-vpn --userna
 python solace_consumer.py --mode queue --queue your-queue-name --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
 ```
 
+**Queue Subscription with Message Acknowledgment:**
+```bash
+python solace_consumer.py --mode queue --queue your-queue-name --ack --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
+```
+
 **Queue Subscription (Non-Exclusive for Load Balancing):**
 ```bash
 python solace_consumer.py --mode queue --queue your-queue-name --queue-type non-exclusive --host tcp://your-broker:55555 --vpn your-vpn --username your-username --password your-password
@@ -65,6 +70,7 @@ Available parameters:
 - `--topic`: Topic subscription pattern (default: `solace/samples/>`, used when mode is `topic`)
 - `--queue`: Queue name (required when mode is `queue`)
 - `--queue-type`: Queue type - `exclusive` or `non-exclusive` (default: `exclusive`)
+- `--ack`: Enable message acknowledgment for queue mode (removes messages from queue after processing)
 
 To see all available options:
 ```bash
@@ -83,6 +89,7 @@ You can also configure the consumer using environment variables (command-line ar
 - `SOLACE_TOPIC`: Topic subscription pattern
 - `SOLACE_QUEUE`: Queue name
 - `SOLACE_QUEUE_TYPE`: Queue type (`exclusive` or `non-exclusive`)
+- `SOLACE_ACK`: Enable message acknowledgment (`true`, `1`, or `yes` to enable)
 
 **Example (Topic):**
 ```bash
@@ -94,7 +101,7 @@ export SOLACE_TOPIC="your/topic/>"
 python solace_consumer.py
 ```
 
-**Example (Queue with Non-Exclusive Type):**
+**Example (Queue with Non-Exclusive Type and Acknowledgment):**
 ```bash
 export SOLACE_HOST="tcp://your-broker:55555"
 export SOLACE_VPN="your-vpn"
@@ -103,6 +110,7 @@ export SOLACE_PASSWORD="your-password"
 export SOLACE_MODE="queue"
 export SOLACE_QUEUE="your-queue-name"
 export SOLACE_QUEUE_TYPE="non-exclusive"
+export SOLACE_ACK="true"
 python solace_consumer.py
 ```
 
@@ -116,6 +124,28 @@ docker run -d -p 8080:8080 -p 55555:55555 -p 8008:8008 -p 1883:1883 -p 8000:8000
 ```
 
 Then publish test messages to see the consumer in action.
+
+## Message Acknowledgment
+
+When consuming messages from a queue, you can enable message acknowledgment using the `--ack` flag. This is important for ensuring messages are properly removed from the queue after processing.
+
+**Without acknowledgment (default):**
+- Messages are received but remain in the queue
+- Messages may be redelivered if the consumer disconnects
+- Useful for testing or when you want to preserve messages
+
+**With acknowledgment (`--ack` flag):**
+- Messages are acknowledged after successful receipt
+- Acknowledged messages are removed from the queue
+- Ensures messages are processed only once
+- Recommended for production use
+
+**Example:**
+```bash
+python solace_consumer.py --mode queue --queue myQueue --ack
+```
+
+**Note:** Message acknowledgment is only applicable to queue mode. Topic mode uses direct messages which don't require acknowledgment.
 
 ## Output Format
 
