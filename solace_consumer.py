@@ -33,7 +33,7 @@ class MessageCounter(MessageHandler):
         
         # Get message payload
         payload_str = message.get_payload_as_string()
-        if payload_str:
+        if payload_str is not None:
             payload = payload_str
         else:
             # If not a string, get bytes and decode or represent them
@@ -107,7 +107,7 @@ def main():
     print("=" * 60)
     print(f"Connecting to: {SOLACE_HOST}")
     print(f"VPN: {SOLACE_VPN}")
-    print(f"Username: {SOLACE_USERNAME}")
+    print(f"Username: {'*' * len(SOLACE_USERNAME) if SOLACE_USERNAME else '[none]'}")
     print(f"Topic: {TOPIC_SUBSCRIPTION}")
     print("=" * 60)
     
