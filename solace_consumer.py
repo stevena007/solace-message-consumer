@@ -185,9 +185,9 @@ def main():
     )
     parser.add_argument(
         '--ack',
-        action='store_true',
+        action=argparse.BooleanOptionalAction,
         default=os.getenv("SOLACE_ACK", "").lower() in ['true', '1', 'yes'],
-        help='Enable message acknowledgment for queue mode (removes messages from queue after processing)'
+        help='Enable message acknowledgment for queue mode (removes messages from queue after processing, use --no-ack to disable)'
     )
     parser.add_argument(
         '--show-message',

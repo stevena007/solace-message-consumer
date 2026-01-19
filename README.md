@@ -90,7 +90,7 @@ Available parameters:
 - `--topic`: Topic subscription pattern (default: `solace/samples/>`, used when mode is `topic`)
 - `--queue`: Queue name (required when mode is `queue`)
 - `--queue-type`: Queue type - `exclusive` or `non-exclusive` (default: `exclusive`)
-- `--ack`: Enable message acknowledgment for queue mode (removes messages from queue after processing)
+- `--ack` / `--no-ack`: Enable message acknowledgment for queue mode (removes messages from queue after processing, default: disabled)
 - `--show-message` / `--no-show-message`: Display message payload (default: enabled)
 - `--show-headers` / `--no-show-headers`: Display message headers including correlation ID, timestamp, priority, etc. (default: disabled)
 
