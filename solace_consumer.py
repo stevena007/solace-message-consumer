@@ -12,7 +12,7 @@ import argparse
 from solace.messaging.messaging_service import MessagingService
 from solace.messaging.resources.topic_subscription import TopicSubscription
 from solace.messaging.receiver.message_receiver import MessageHandler, InboundMessage
-from solace.messaging.config.solace_properties import service_properties
+from solace.messaging.config.solace_properties import service_properties, transport_layer_properties, authentication_properties
 from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientError
 
 
@@ -113,10 +113,10 @@ def main():
     
     # Build broker properties
     broker_props = {
-        service_properties.HOST: SOLACE_HOST,
+        transport_layer_properties.HOST: SOLACE_HOST,
         service_properties.VPN_NAME: SOLACE_VPN,
-        service_properties.AUTHENTICATION_BASIC_USERNAME: SOLACE_USERNAME,
-        service_properties.AUTHENTICATION_BASIC_PASSWORD: SOLACE_PASSWORD
+        authentication_properties.SCHEME_BASIC_USER_NAME: SOLACE_USERNAME,
+        authentication_properties.SCHEME_BASIC_PASSWORD: SOLACE_PASSWORD
     }
     
     # Track resources for cleanup
