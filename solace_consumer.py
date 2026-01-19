@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Solace Message Consumer
-Connects to a Solace broker and consumes messages from a topic.
+Connects to a Solace broker and consumes messages from topics or queues.
 Outputs each message and tracks the message count.
 """
 
@@ -11,6 +11,7 @@ import os
 import argparse
 from solace.messaging.messaging_service import MessagingService
 from solace.messaging.resources.topic_subscription import TopicSubscription
+from solace.messaging.resources.queue import Queue
 from solace.messaging.receiver.message_receiver import MessageHandler, InboundMessage
 from solace.messaging.config.solace_properties import service_properties, transport_layer_properties, authentication_properties
 from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientError
@@ -60,7 +61,7 @@ def main():
     
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description='Solace Message Consumer - Consume messages from a Solace topic',
+        description='Solace Message Consumer - Consume messages from Solace topics or queues',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
@@ -91,7 +92,20 @@ def main():
         '--topic',
         type=str,
         default=os.getenv("SOLACE_TOPIC", "solace/samples/>"),
-        help='Topic subscription pattern'
+        help='Topic subscription pattern (used when mode is "topic")'
+    )
+    parser.add_argument(
+        '--mode',
+        type=str,
+        choices=['topic', 'queue'],
+        default=os.getenv("SOLACE_MODE", "topic"),
+        help='Subscription mode: "topic" for topic subscriptions or "queue" for queue subscriptions'
+    )
+    parser.add_argument(
+        '--queue',
+        type=str,
+        default=os.getenv("SOLACE_QUEUE", ""),
+        help='Queue name (required when mode is "queue")'
     )
     
     args = parser.parse_args()
@@ -102,13 +116,23 @@ def main():
     SOLACE_USERNAME = args.username
     SOLACE_PASSWORD = args.password
     TOPIC_SUBSCRIPTION = args.topic
+    SUBSCRIPTION_MODE = args.mode
+    QUEUE_NAME = args.queue
+    
+    # Validate queue mode
+    if SUBSCRIPTION_MODE == 'queue' and not QUEUE_NAME:
+        parser.error("--queue is required when --mode is 'queue'")
     
     print("Solace Message Consumer")
     print("=" * 60)
     print(f"Connecting to: {SOLACE_HOST}")
     print(f"VPN: {SOLACE_VPN}")
     print(f"Username: {'*' * len(SOLACE_USERNAME) if SOLACE_USERNAME else '[none]'}")
-    print(f"Topic: {TOPIC_SUBSCRIPTION}")
+    print(f"Mode: {SUBSCRIPTION_MODE}")
+    if SUBSCRIPTION_MODE == 'topic':
+        print(f"Topic: {TOPIC_SUBSCRIPTION}")
+    else:
+        print(f"Queue: {QUEUE_NAME}")
     print("=" * 60)
     
     # Build broker properties
@@ -120,7 +144,7 @@ def main():
     }
     
     # Track resources for cleanup
-    direct_receiver = None
+    receiver = None
     messaging_service = None
     message_handler = MessageCounter()
     
@@ -133,18 +157,33 @@ def main():
         messaging_service.connect()
         print("✓ Connected successfully!")
         
-        # Create a direct message receiver
-        print("\nSetting up message receiver...")
-        direct_receiver = messaging_service.create_direct_message_receiver_builder().build()
-        direct_receiver.start()
-        print("✓ Receiver started!")
-        
-        # Subscribe to topic
-        print(f"\nSubscribing to topic: {TOPIC_SUBSCRIPTION}")
-        topic_sub = TopicSubscription.of(TOPIC_SUBSCRIPTION)
-        direct_receiver.receive_async(message_handler)
-        direct_receiver.add_subscription(topic_sub)
-        print("✓ Subscribed successfully!")
+        # Create appropriate receiver based on mode
+        if SUBSCRIPTION_MODE == 'topic':
+            # Create a direct message receiver for topic subscriptions
+            print("\nSetting up direct message receiver for topic subscription...")
+            receiver = messaging_service.create_direct_message_receiver_builder().build()
+            receiver.start()
+            print("✓ Receiver started!")
+            
+            # Subscribe to topic
+            print(f"\nSubscribing to topic: {TOPIC_SUBSCRIPTION}")
+            topic_sub = TopicSubscription.of(TOPIC_SUBSCRIPTION)
+            receiver.receive_async(message_handler)
+            receiver.add_subscription(topic_sub)
+            print("✓ Subscribed successfully!")
+        else:
+            # Create a persistent message receiver for queue subscriptions
+            print("\nSetting up persistent message receiver for queue subscription...")
+            receiver = messaging_service.create_persistent_message_receiver_builder().build()
+            receiver.start()
+            print("✓ Receiver started!")
+            
+            # Bind to queue
+            print(f"\nBinding to queue: {QUEUE_NAME}")
+            queue = Queue.durable_exclusive_queue(QUEUE_NAME)
+            receiver.receive_async(message_handler)
+            receiver.add_subscription(queue)
+            print("✓ Bound to queue successfully!")
         
         print("\n" + "=" * 60)
         print("Waiting for messages... (Press Ctrl+C to exit)")
@@ -159,9 +198,9 @@ def main():
         
         # Cleanup
         print("\nCleaning up...")
-        if direct_receiver:
+        if receiver:
             try:
-                direct_receiver.terminate()
+                receiver.terminate()
             except Exception as e:
                 print(f"Warning: Error terminating receiver: {e}")
         
