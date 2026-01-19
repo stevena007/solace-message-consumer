@@ -7,6 +7,7 @@ Outputs each message and tracks the message count.
 
 import sys
 import time
+import os
 from solace.messaging.messaging_service import MessagingService
 from solace.messaging.resources.topic_subscription import TopicSubscription
 from solace.messaging.receiver.message_receiver import MessageHandler, InboundMessage
@@ -30,7 +31,8 @@ class MessageCounter(MessageHandler):
         self.message_count += 1
         
         # Get message payload
-        payload = message.get_payload_as_string() if message.get_payload_as_string() else message.get_payload_as_bytes()
+        payload_str = message.get_payload_as_string()
+        payload = payload_str if payload_str else message.get_payload_as_bytes()
         
         # Get topic
         topic = message.get_destination_name()
@@ -47,12 +49,12 @@ class MessageCounter(MessageHandler):
 def main():
     """Main function to set up and run the Solace message consumer."""
     
-    # Configuration - these can be customized via environment variables or command line args
-    SOLACE_HOST = "tcp://localhost:55555"
-    SOLACE_VPN = "default"
-    SOLACE_USERNAME = "default"
-    SOLACE_PASSWORD = "default"
-    TOPIC_SUBSCRIPTION = "solace/samples/>"
+    # Configuration - read from environment variables with fallback defaults
+    SOLACE_HOST = os.getenv("SOLACE_HOST", "tcp://localhost:55555")
+    SOLACE_VPN = os.getenv("SOLACE_VPN", "default")
+    SOLACE_USERNAME = os.getenv("SOLACE_USERNAME", "default")
+    SOLACE_PASSWORD = os.getenv("SOLACE_PASSWORD", "default")
+    TOPIC_SUBSCRIPTION = os.getenv("SOLACE_TOPIC", "solace/samples/>")
     
     print("Solace Message Consumer")
     print("=" * 60)

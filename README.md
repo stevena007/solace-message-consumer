@@ -39,13 +39,25 @@ python solace_consumer.py
 
 ### Configuration
 
-Edit the configuration variables in `solace_consumer.py` to match your Solace broker setup:
+Configure the consumer using environment variables:
 
 - `SOLACE_HOST`: Broker host and port (default: `tcp://localhost:55555`)
 - `SOLACE_VPN`: Message VPN name (default: `default`)
 - `SOLACE_USERNAME`: Authentication username (default: `default`)
 - `SOLACE_PASSWORD`: Authentication password (default: `default`)
-- `TOPIC_SUBSCRIPTION`: Topic subscription pattern (default: `solace/samples/>`)
+- `SOLACE_TOPIC`: Topic subscription pattern (default: `solace/samples/>`)
+
+Example:
+```bash
+export SOLACE_HOST="tcp://your-broker:55555"
+export SOLACE_VPN="your-vpn"
+export SOLACE_USERNAME="your-username"
+export SOLACE_PASSWORD="your-password"
+export SOLACE_TOPIC="your/topic/>"
+python solace_consumer.py
+```
+
+Alternatively, you can edit the default values directly in `solace_consumer.py`.
 
 ### Running with Docker (Solace Broker)
 
